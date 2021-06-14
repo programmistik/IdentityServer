@@ -47,7 +47,7 @@ namespace IdentityServer
         }
 
         [HttpPost("Login")]
-        public async Task<IActionResult> Login([FromBody] UserForAuthenticationDto userForAuthentication)
+        public async Task<ActionResult<AuthResponseDto>> Login([FromBody] UserForAuthenticationDto userForAuthentication)
         {
             var user = await _userManager.FindByNameAsync(userForAuthentication.Email);
             if (user == null || !await _userManager.CheckPasswordAsync(user, userForAuthentication.Password))
@@ -56,7 +56,9 @@ namespace IdentityServer
             var claims = GetClaims(user);
             var tokenOptions = GenerateTokenOptions(signingCredentials, claims);
             var token = new JwtSecurityTokenHandler().WriteToken(tokenOptions);
-            return Ok(new AuthResponseDto { IsAuthSuccessful = true, Token = token });
+            //return Ok(new AuthResponseDto { IsAuthSuccessful = true, Token = token });
+            var res = new AuthResponseDto { IsAuthSuccessful = true, Token = token };
+            return res;
         }
 
         private SigningCredentials GetSigningCredentials()

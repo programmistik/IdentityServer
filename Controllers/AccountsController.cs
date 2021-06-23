@@ -46,6 +46,22 @@ namespace IdentityServer
             return StatusCode(201);
         }
 
+        [HttpPost("Change")]
+        public async Task<ActionResult<ChangeResponseDto>> Change([FromBody] UserForChangeDto userForChange)
+        {
+            var user = await _userManager.FindByNameAsync(userForChange.Email);
+            if (user == null || !await _userManager.CheckPasswordAsync(user, userForChange.OldPassword))
+                return Unauthorized(new AuthResponseDto { ErrorMessage = "Invalid Authentication" });
+
+            var result = await _userManager.ChangePasswordAsync(user, userForChange.OldPassword, userForChange.Password);
+            if(!result.Succeeded)
+            {
+                var errors = result.Errors.Select(e => e.Description);
+                return BadRequest(new ChangeResponseDto { Errors = errors });
+            }
+            return StatusCode(201);
+        }
+
         [HttpPost("Login")]
         public async Task<ActionResult<AuthResponseDto>> Login([FromBody] UserForAuthenticationDto userForAuthentication)
         {

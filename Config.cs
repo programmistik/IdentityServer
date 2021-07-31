@@ -4,12 +4,14 @@
 
 using IdentityServer4;
 using IdentityServer4.Models;
+using Microsoft.Extensions.Configuration;
 using System.Collections.Generic;
 
 namespace IdentityServer
 {
     public static class Config
     {
+        
         public static IEnumerable<IdentityResource> IdentityResources =>
             new IdentityResource[]
             {
@@ -17,51 +19,38 @@ namespace IdentityServer
                 new IdentityResources.Profile(),
             };
 
-        public static IEnumerable<ApiScope> ApiScopes =>
-            new ApiScope[]
+        public static IEnumerable<ApiScope> ApiScopes()
+        {
+            var Scope = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build().GetSection("AppSettings")["Scope"];
+            return new ApiScope[]
             {
-                new ApiScope("api1", "My API"),
-                new ApiScope("scope2"),
+                new ApiScope(Scope, "My API"),
+                new ApiScope("scope"),
             };
+        }
 
-        public static IEnumerable<Client> Clients =>
-            new Client[]
+        public static IEnumerable<Client> Clients()
+        {
+            var settings = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+
+            var ClientId = settings.GetSection("AppSettings")["ClientId"];
+            var ClientSecret = settings.GetSection("AppSettings")["ClientSecret"];
+            var Scope = settings.GetSection("AppSettings")["Scope"];
+
+            return new Client[]
             {
-                // m2m client credentials flow client
                 new Client
                 {
-                    ClientId = "client",
-                  //  ClientName = "Client Credentials Client",
+                    ClientId = ClientId,
 
                     AllowedGrantTypes = GrantTypes.ClientCredentials,
-                    ClientSecrets = { new Secret("511536EF-F270-4058-80CA-1C89C192F69A".Sha256()) },
+                    ClientSecrets = { new Secret(ClientSecret.Sha256()) },
 
-                    AllowedScopes = { "api1" }
-                },
-
-                
-                new Client
-                {
-                    ClientId = "Wasm",
-                    ClientSecrets = { new Secret("secret".Sha256()) },
-
-                    AllowedGrantTypes = GrantTypes.Code,
-
-                    // where to redirect to after login
-                    RedirectUris = { "https://localhost:5002/signin-oidc" },
-
-                    // where to redirect to after logout
-                    PostLogoutRedirectUris = { "https://localhost:5002/signout-callback-oidc" },
-
-                    AllowOfflineAccess = true,
-
-                    AllowedScopes = new List<string>
-                    {
-                        IdentityServerConstants.StandardScopes.OpenId,
-                        IdentityServerConstants.StandardScopes.Profile,
-                        "api3"
-                    }
+                    AllowedScopes = { Scope }
                 }
+
             };
+        }
     }
 }
+
